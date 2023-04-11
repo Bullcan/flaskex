@@ -1,0 +1,105 @@
+При попытке запуска приложения локально, следующую ошибку: 
+
+Traceback (most recent call last):
+  File "/Flaskex/app.py", line 4, in <module>
+    from scripts import forms
+  File "/Flaskex/scripts/forms.py", line 6, in <module>
+    class LoginForm(Form):
+  File "/Flaskex/scripts/forms.py", line 7, in LoginForm
+    username = StringField('Username:', validators=[validators.required(), validators.Length(min=1, max=30)])
+AttributeError: module 'wtforms.validators' has no attribute 'required'
+
+
+
+Проблема запуска приложения была решена заменой валидатора "validators.required()" на "validators.DataRequired()" в 7 и 8 строках файла Flaskex/scripts/forms.py:
+
+До изменений:
+7 строка:
+    username = StringField('Username:', validators=[validators.required(), validators.Length(min=1, max=30)])
+8 строка:
+    password = StringField('Password:', validators=[validators.required(), validators.Length(min=1, max=30)])
+
+После изменений:
+7 строка:    
+username = StringField('Username:', validators=[validators.DataRequired(), validators.Length(min=1, max=30)])
+8 строка:    
+password = StringField('Password:', validators=[validators.DataRequired(), validators.Length(min=1, max=30)])
+
+
+
+Комментарии к файлу "Dockerfile":
+
+FROM python:3.11.3-alpine # определяем базовый образ, выбран образ alpine, так как он более легковесный
+
+WORKDIR /flaskex # создаём рабочую директорию
+
+COPY . /flaskex # копируем содержимое текущей директории с уже исправленными файлами проекта в нашу рабочую директорию
+
+RUN pip3 install -r requirements.txt # запустим pip3 install с файлом requirements.txt внутри этого рабочего каталога
+
+EXPOSE 5000 # информируем Docker о том, что контейнер прослушивает порт 5000 во время выполнения, данный порт используется по умолчанию при работе приложения
+
+ENTRYPOINT ["python3"] # точка входа python3
+
+CMD [ "app.py" ] # запускаем app.py
+
+
+
+Комментарии к файлу "docker-compose.yml":
+
+version: '3'
+services:
+    flaskex:
+        build: . # путь до Dockerfile
+        ports: # открываем порт в контейнер
+            - "5000:5000" # порт, который будет смотреть наружу : порт который используется внутри контейнера
+        volumes:
+            - .:/flaskex  # прокладывам путь для файлов. Все файлы, которые хранятся в текущей директории, появятся в директории контейнера /flaskex
+        environment:
+            - PORT:5000 # устанавливаем переменные среды
+
+
+
+Структура проекта:
+
+.
+├── accounts.db
+├── app.py
+├── CONTRIBUTING.md
+├── docker-compose.yml
+├── Dockerfile
+├── LICENSE.txt
+├── media
+│   ├── flaskex-demo.png
+│   └── flaskex-logo.png
+├── Procfile
+├── README.md
+├── requirements.txt
+├── runtime.txt
+├── scripts
+│   ├── forms.py
+│   ├── helpers.py
+│   ├── __init__.py
+│   ├── __init__.pyc
+│   ├── __pycache__
+│   │   ├── forms.cpython-311.pyc
+│   │   ├── helpers.cpython-311.pyc
+│   │   ├── __init__.cpython-311.pyc
+│   │   ├── __init__.cpython-36.pyc
+│   │   ├── tabledef.cpython-311.pyc
+│   │   └── tabledef.cpython-36.pyc
+│   ├── tabledef.py
+│   └── tabledef.pyc
+├── static
+│   ├── css
+│   │   └── style.css
+│   └── js
+│       └── scripts.js
+└── templates
+    ├── base.html
+    ├── home.html
+    ├── login.html
+    ├── navbar.html
+    └── settings.html
+
+
